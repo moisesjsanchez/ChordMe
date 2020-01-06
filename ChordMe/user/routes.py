@@ -1,17 +1,19 @@
-from flask import Flask, jsonify, json, Blueprint, request
+from flask import jsonify, Blueprint, request
 from ChordMe import db
 from ChordMe.models import Chord
+from ChordMe.auth.token import token_required
 
 user = Blueprint('user', __name__)
 
-#api for registered users chord manipulation 
+# api for registered users chord manipulation
 @user.route('/user/<id>', methods=['GET'])
+@token_required
 def select_chord(id):
     chord = Chord.query.filter_by(id=id).first()
 
     if not chord:
-        return jsonify({'message':'chord not found'}), 404
-    
+        return jsonify({'message': 'chord not found'}), 404
+
     chord_data = {}
     chord_data['id'] = chord.id
     chord_data['notes'] = chord.notes
@@ -20,7 +22,9 @@ def select_chord(id):
 
     return jsonify({'chords': chord_data}), 200
 
+
 @user.route('/user', methods=['GET'])
+@token_required
 def select_chords():
     chords = Chord.query.all()
 
@@ -35,26 +39,31 @@ def select_chords():
 
     return jsonify({'chords': output}), 200
 
+
 @user.route('/user', methods=['POST'])
+@token_required
 def create_chord():
     chord_data = request.get_json()
 
-    new_chord = Chord(chord_name=chord_data['chord_name'], string_names=chord_data['string_names'], 
-    notes=chord_data['notes'])
+    new_chord = Chord(chord_name=chord_data['chord_name'],
+                      string_names=chord_data['string_names'],
+                      notes=chord_data['notes'])
 
     db.session.add(new_chord)
     db.session.commit()
 
-    return jsonify({'message':'Chord has been created'}), 201
+    return jsonify({'message': 'Chord has been created'}), 201
+
 
 @user.route('/user/<id>', methods=['PUT'])
+@token_required
 def edit_chord(id):
 
     chord = Chord.query.filter_by(id=id).first()
-    
+
     if not chord:
-        return jsonify({'message':'chord not found'}), 404
-    
+        return jsonify({'message': 'chord not found'}), 404
+
     notes = request.json['notes']
     string_names = request.json['string_names']
     chord_name = request.json['chord_name']
@@ -65,16 +74,18 @@ def edit_chord(id):
 
     db.session.commit()
 
-    return jsonify({'message':'Chord has been edited'}), 200
+    return jsonify({'message': 'Chord has been edited'}), 200
+
 
 @user.route('/user/<id>', methods=['DELETE'])
+@token_required
 def delete_chord(id):
     chord = Chord.query.filter_by(id=id).first()
-    
+
     if not chord:
-        return jsonify({'message':'chord not found'}), 404
-    
+        return jsonify({'message': 'chord not found'}), 404
+
     db.session.delete(chord)
     db.session.commit()
 
-    return jsonify({'message':'Chord has been deleted'}),200
+    return jsonify({'message': 'Chord has been deleted'}), 200
